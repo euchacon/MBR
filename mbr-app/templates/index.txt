@@ -1,0 +1,32 @@
+LA-Z-BOY · LATAM
+
+MBR Dashboard
+✓ Auto-saved
+      June 2026July 2026
+      August 2026September 2026October 2026
+      November 2026December 2026
+      January 2027February 2027March 2027
+      April 2027May 2027June 2027July 2027
+      August 2027September 2027October 2027
+      November 2027December 2027
+    
+Clear
+↓ Generate PPTX
+00COVER
+01SNAPSHOT
+02ACCOUNTS
+03INVENTORY
+04COMMERCIAL
+05PIPELINE
+06NEW CUSTOMERS
+07NEEDS
+08MARKETING
+10CLOSING
+⬇ GENERATE
+Cover
+Slide 1 — Report identification
+REPORT INFO
+DEALER / DISTRIBUIDOR
+COUNTRY / PAÍS
+PREPARED BY
+Eugenio Chacon
