@@ -90,33 +90,83 @@ def replace_shape_text(slide, shape_name, new_text):
             return True
     return False
 
-def fill_slide_table(slide, table_index, rows_data, col_keys):
+STATUS_COLORS = {
+    # value: hex color
+    'On Track': '2E9C3A', 'At Risk': 'E8B100', 'Needs Attention': 'D64545',
+    'No': '2E9C3A', 'Yes': 'D64545', 'Soon': 'E8B100',
+    'High': '2E9C3A', 'Med': 'E8B100', 'Low': 'D64545',
+    'In Progress': 'E8B100', 'Delayed': 'D64545',
+}
+
+def _set_run_color(r_elem, hex_color):
     from pptx.oxml.ns import qn
     from lxml import etree
+    rPr = r_elem.find(qn('a:rPr'))
+    if rPr is None:
+        rPr = etree.Element(qn('a:rPr'))
+        r_elem.insert(0, rPr)
+    for fill in rPr.findall(qn('a:solidFill')):
+        rPr.remove(fill)
+    fill = etree.SubElement(rPr, qn('a:solidFill'))
+    clr  = etree.SubElement(fill, qn('a:srgbClr'))
+    clr.set('val', hex_color)
+
+
+def _fill_cell(cell, text, color=None):
+    """Replace cell text preserving the template run formatting."""
+    from pptx.oxml.ns import qn
+    from lxml import etree
+    tf     = cell.text_frame
+    txBody = tf._txBody
+    paras  = txBody.findall(qn('a:p'))
+    for p in paras[1:]:
+        txBody.remove(p)
+    first_p = paras[0]
+    runs = first_p.findall(qn('a:r'))
+    # Preserve formatting from the template's first run
+    template_run = copy.deepcopy(runs[0]) if runs else None
+    for r in runs:
+        first_p.remove(r)
+    if template_run is not None:
+        r_elem = template_run
+        t_elem = r_elem.find(qn('a:t'))
+        if t_elem is None:
+            t_elem = etree.SubElement(r_elem, qn('a:t'))
+    else:
+        r_elem = etree.Element(qn('a:r'))
+        t_elem = etree.SubElement(r_elem, qn('a:t'))
+    t_elem.text = str(text) if text else ''
+    if color:
+        _set_run_color(r_elem, color)
+    _insert_run(first_p, r_elem)
+
+
+def fill_slide_table(slide, table_index, rows_data, col_keys, status_col=None, dot_only=False, skip_last_row=False):
+    """Fill table preserving formatting. status_col gets colored dot styling."""
     tables = [s for s in slide.shapes if s.has_table]
     if table_index >= len(tables):
         return
     tbl = tables[table_index].table
+    last_data_row = len(tbl.rows) - (2 if skip_last_row else 1)
     for ri, row_data in enumerate(rows_data):
         tbl_row = ri + 1
-        if tbl_row >= len(tbl.rows):
+        if tbl_row > last_data_row:
             break
         for ci, col_key in enumerate(col_keys):
             if ci >= len(tbl.columns):
                 break
-            cell   = tbl.cell(tbl_row, ci)
-            tf     = cell.text_frame
-            txBody = tf._txBody
-            paras  = txBody.findall(qn('a:p'))
-            for p in paras[1:]:
-                txBody.remove(p)
-            first_p = paras[0]
-            for r in first_p.findall(qn('a:r')):
-                first_p.remove(r)
-            r_elem = etree.Element(qn('a:r'))
-            t_elem = etree.SubElement(r_elem, qn('a:t'))
-            t_elem.text = str(row_data.get(col_key, ''))
-            _insert_run(first_p, r_elem)
+            val  = str(row_data.get(col_key, ''))
+            cell = tbl.cell(tbl_row, ci)
+            if status_col is not None and ci == status_col:
+                color = STATUS_COLORS.get(val)
+                text  = '\u25cf' if dot_only else ('\u25cf ' + val if val else '')
+                _fill_cell(cell, text, color)
+            else:
+                _fill_cell(cell, val)
+    # Clear leftover placeholder data rows
+    for tbl_row in range(len(rows_data) + 1, last_data_row + 1):
+        for ci in range(len(tbl.columns)):
+            _fill_cell(tbl.cell(tbl_row, ci), '')
 
 # ── Routes ────────────────────────────────────────────────────────────────────
 
@@ -179,7 +229,8 @@ def generate():
 
     # Slide 3 — Account Performance
     fill_slide_table(s[2], 0, d.get('accounts', []),
-        ['account','doors','slots','units_sold','revenue','floor_inv','backlog','rotation','vs_target','status'])
+        ['account','doors','slots','units_sold','revenue','floor_inv','backlog','rotation','vs_target','status'],
+        status_col=9, dot_only=True, skip_last_row=True)
     replace_shape_text(s[2], 'Text 148', d.get('perf_notes', ''))
 
     # Slide 4 — Inventory
@@ -188,7 +239,8 @@ def generate():
     replace_shape_text(s[3], 'Text 12', d.get('backlog_value', '$[X,XXX]'))
     replace_shape_text(s[3], 'Text 16', d.get('weeks_cover', '[#]') + ' wks')
     fill_slide_table(s[3], 0, d.get('inventory', []),
-        ['account','sku','on_floor','sold_mtd','in_transit','reorder','next_action','target_stock','days_cover'])
+        ['account','sku','on_floor','sold_mtd','in_transit','reorder','next_action','target_stock','days_cover'],
+        status_col=5)
     replace_shape_text(s[3], 'Text 114', d.get('inv_issues', ''))
 
     # Slide 5 — Commercial Narrative
@@ -199,13 +251,15 @@ def generate():
 
     # Slide 6 — Pipeline
     fill_slide_table(s[5], 0, d.get('pipeline', []),
-        ['account','opportunity','est_units','est_usd','probability','expected_close','next_action','owner'])
+        ['account','opportunity','est_units','est_usd','probability','expected_close','next_action','owner'],
+        status_col=4)
     replace_shape_text(s[5], 'Text 88', d.get('orders_to_place', ''))
     replace_shape_text(s[5], 'Text 91', d.get('activities_planned', ''))
 
     # Slide 7 — New Customer Deployment
     fill_slide_table(s[6], 0, d.get('new_customers', []),
-        ['market','dealer','customer','doors','total_slots','launch_date','status','next_step'])
+        ['market','dealer','customer','doors','total_slots','launch_date','status','next_step'],
+        status_col=6)
     replace_shape_text(s[6], 'Text 71', d.get('onboarding_notes', ''))
 
     # Slide 8 — Needs & Escalations
