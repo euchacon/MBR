@@ -1,0 +1,627 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>La-Z-Boy LATAM · MBR Dashboard</title>
+<style>
+:root {
+  --navy: #0d2b45;
+  --teal: #1a5276;
+  --teal-mid: #1b6ca8;
+  --accent: #e8a020;
+  --red: #c0392b;
+  --green: #1e8449;
+  --amber: #d68910;
+  --bg: #f0f4f8;
+  --card: #ffffff;
+  --border: #d5dde8;
+  --text: #1a2636;
+  --muted: #6b7a8d;
+  --input-bg: #f7f9fc;
+  --radius: 8px;
+  --shadow: 0 1px 4px rgba(0,0,0,0.08), 0 4px 16px rgba(0,0,0,0.04);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+
+header {
+  background: var(--navy); padding: 0 32px;
+  display: flex; align-items: center; justify-content: space-between;
+  height: 60px; position: sticky; top: 0; z-index: 100;
+  border-bottom: 3px solid var(--accent);
+}
+.header-left { display: flex; align-items: center; gap: 16px; }
+.logo { font-size: 13px; font-weight: 700; color: #fff; letter-spacing: 2px; text-transform: uppercase; }
+.logo span { color: var(--accent); }
+.divider-v { width: 1px; height: 20px; background: rgba(255,255,255,0.2); }
+.subtitle { color: rgba(255,255,255,0.55); font-size: 12px; }
+.header-right { display: flex; align-items: center; gap: 10px; }
+.period-select {
+  background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2);
+  color: #fff; padding: 6px 12px; border-radius: var(--radius); font-size: 13px; cursor: pointer;
+}
+.period-select option { background: var(--navy); }
+.btn { padding: 7px 18px; border-radius: var(--radius); font-size: 13px; font-weight: 600; cursor: pointer; border: none; transition: opacity 0.15s, transform 0.1s; }
+.btn:hover { opacity: 0.87; transform: translateY(-1px); }
+.btn:active { transform: translateY(0); }
+.btn-primary { background: var(--accent); color: var(--navy); }
+.btn-ghost { background: rgba(255,255,255,0.1); color: #fff; border: 1px solid rgba(255,255,255,0.2); }
+.btn-generate { background: #27ae60; color: #fff; font-size: 14px; padding: 8px 22px; }
+.saved-badge { font-size: 11px; color: #4ade80; opacity: 0; transition: opacity 0.4s; font-weight: 600; }
+.saved-badge.visible { opacity: 1; }
+
+nav {
+  background: var(--card); border-bottom: 1px solid var(--border);
+  padding: 0 32px; display: flex; overflow-x: auto;
+}
+.nav-tab {
+  padding: 14px 16px; font-size: 11px; font-weight: 700; color: var(--muted);
+  cursor: pointer; border-bottom: 3px solid transparent; white-space: nowrap;
+  transition: all 0.15s; text-transform: uppercase; letter-spacing: 0.6px;
+}
+.nav-tab:hover { color: var(--teal-mid); }
+.nav-tab.active { color: var(--navy); border-bottom-color: var(--accent); }
+.tab-num { display: inline-block; background: var(--bg); color: var(--muted); border-radius: 4px; padding: 1px 5px; font-size: 10px; margin-right: 5px; }
+.nav-tab.active .tab-num { background: var(--accent); color: var(--navy); }
+
+main { padding: 28px 32px; max-width: 1200px; margin: 0 auto; }
+.section { display: none; }
+.section.active { display: block; }
+.section-header { display: flex; align-items: flex-end; justify-content: space-between; margin-bottom: 20px; }
+.section-title { font-size: 18px; font-weight: 700; color: var(--navy); }
+.section-desc { font-size: 12px; color: var(--muted); margin-top: 3px; }
+
+.card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow); padding: 20px; margin-bottom: 20px; }
+.card-title { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: var(--teal); margin-bottom: 14px; padding-bottom: 10px; border-bottom: 1px solid var(--border); }
+
+.kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 20px; }
+.kpi-card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow); padding: 16px 18px; border-top: 3px solid var(--teal-mid); }
+.kpi-label { font-size: 11px; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; }
+.kpi-input { width: 100%; font-size: 22px; font-weight: 700; color: var(--navy); border: none; background: transparent; outline: none; font-family: inherit; }
+.kpi-sub { font-size: 11px; color: var(--muted); margin-top: 4px; }
+
+.field { margin-bottom: 14px; }
+.field label { display: block; font-size: 11px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 5px; }
+input[type="text"], select, textarea { width: 100%; padding: 8px 11px; border: 1px solid var(--border); border-radius: 6px; font-size: 13px; font-family: inherit; color: var(--text); background: var(--input-bg); transition: border-color 0.15s; outline: none; }
+input:focus, select:focus, textarea:focus { border-color: var(--teal-mid); background: #fff; }
+textarea { resize: vertical; min-height: 80px; line-height: 1.5; }
+.two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.three-col { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
+
+.table-wrapper { overflow-x: auto; margin-bottom: 8px; }
+table { width: 100%; border-collapse: collapse; font-size: 13px; }
+th { background: var(--navy); color: #fff; padding: 9px 12px; text-align: left; font-size: 11px; font-weight: 600; letter-spacing: 0.4px; white-space: nowrap; }
+td { padding: 7px 10px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+tr:last-child td { border-bottom: none; }
+tr:nth-child(even) td { background: #f7f9fc; }
+td input, td select { width: 100%; padding: 4px 7px; border: 1px solid transparent; border-radius: 4px; background: transparent; font-size: 12px; font-family: inherit; }
+td input:focus, td select:focus { border-color: var(--teal-mid); background: #fff; }
+.add-row-btn { background: none; border: 1px dashed var(--border); color: var(--muted); font-size: 12px; padding: 7px 14px; border-radius: 6px; cursor: pointer; margin-top: 8px; transition: all 0.15s; font-family: inherit; }
+.add-row-btn:hover { border-color: var(--teal-mid); color: var(--teal-mid); background: #eef2f8; }
+.del-btn { background: none; border: none; color: #ccc; cursor: pointer; font-size: 16px; padding: 0 4px; transition: color 0.15s; }
+.del-btn:hover { color: var(--red); }
+
+/* Generate panel */
+.generate-panel { background: var(--navy); border-radius: var(--radius); padding: 32px; text-align: center; }
+.generate-panel h2 { color: #fff; font-size: 22px; margin-bottom: 10px; }
+.generate-panel p { color: rgba(255,255,255,0.6); font-size: 14px; margin-bottom: 28px; line-height: 1.6; }
+.generate-big-btn { background: #27ae60; color: #fff; border: none; padding: 16px 48px; border-radius: var(--radius); font-size: 16px; font-weight: 700; cursor: pointer; font-family: inherit; transition: all 0.2s; display: inline-flex; align-items: center; gap: 10px; }
+.generate-big-btn:hover { background: #219a52; transform: translateY(-2px); box-shadow: 0 8px 24px rgba(39,174,96,0.3); }
+.generate-big-btn:disabled { background: #555; cursor: not-allowed; transform: none; box-shadow: none; }
+.spinner { display: none; width: 18px; height: 18px; border: 2px solid rgba(255,255,255,0.3); border-top-color: #fff; border-radius: 50%; animation: spin 0.7s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.status-msg { margin-top: 16px; font-size: 13px; color: rgba(255,255,255,0.7); min-height: 20px; }
+
+@media (max-width: 800px) {
+  main { padding: 16px; }
+  header { padding: 0 16px; }
+  nav { padding: 0 16px; }
+  .kpi-grid { grid-template-columns: 1fr 1fr; }
+  .two-col, .three-col { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-left">
+    <div class="logo">La<span>-</span>Z<span>-</span>Boy <span>·</span> LATAM</div>
+    <div class="divider-v"></div>
+    <div class="subtitle">MBR Dashboard</div>
+  </div>
+  <div class="header-right">
+    <span class="saved-badge" id="saved-badge">✓ Auto-saved</span>
+    <select class="period-select" id="period-select" onchange="autoSave()">
+      <option>January 2026</option><option>February 2026</option><option>March 2026</option>
+      <option>April 2026</option><option>May 2026</option><option>June 2026</option>
+      <option>July 2026</option><option>August 2026</option><option>September 2026</option>
+      <option>October 2026</option><option>November 2026</option><option>December 2026</option>
+      <option>January 2027</option><option>February 2027</option><option>March 2027</option>
+      <option>April 2027</option><option>May 2027</option><option>June 2027</option>
+      <option>July 2027</option><option>August 2027</option><option>September 2027</option>
+      <option>October 2027</option><option>November 2027</option><option>December 2027</option>
+    </select>
+    <button class="btn btn-ghost" onclick="loadFromCloud()" id="load-btn">↑ Load MBR</button>
+    <button class="btn btn-ghost" onclick="saveToCloud()" id="save-btn">💾 Save</button>
+    <button class="btn btn-ghost" onclick="clearAll()">Clear</button>
+    <button class="btn btn-generate" onclick="showSection('generate')">↓ Generate PPTX</button>
+  </div>
+</header>
+
+<nav>
+  <div class="nav-tab active" onclick="showSection('s00')"><span class="tab-num">00</span>Cover</div>
+  <div class="nav-tab" onclick="showSection('s01')"><span class="tab-num">01</span>Snapshot</div>
+  <div class="nav-tab" onclick="showSection('s02')"><span class="tab-num">02</span>Accounts</div>
+  <div class="nav-tab" onclick="showSection('s03')"><span class="tab-num">03</span>Inventory</div>
+  <div class="nav-tab" onclick="showSection('s04')"><span class="tab-num">04</span>Commercial</div>
+  <div class="nav-tab" onclick="showSection('s05')"><span class="tab-num">05</span>Pipeline</div>
+  <div class="nav-tab" onclick="showSection('s06')"><span class="tab-num">06</span>New Customers</div>
+  <div class="nav-tab" onclick="showSection('s07')"><span class="tab-num">07</span>Needs</div>
+  <div class="nav-tab" onclick="showSection('s08')"><span class="tab-num">08</span>Marketing</div>
+  <div class="nav-tab" onclick="showSection('s10')"><span class="tab-num">10</span>Closing</div>
+  <div class="nav-tab" onclick="showSection('generate')" style="color:#27ae60;font-weight:800;">⬇ GENERATE</div>
+</nav>
+
+<main>
+
+<!-- 00 COVER -->
+<div id="s00" class="section active">
+  <div class="section-header"><div><div class="section-title">Cover</div><div class="section-desc">Slide 1 — Report identification</div></div></div>
+  <div class="card">
+    <div class="card-title">Report Info</div>
+    <div class="two-col">
+      <div class="field"><label>Dealer / Distribuidor</label><input type="text" id="dealer" placeholder="e.g. MFS / Vargu / Kennedy"></div>
+      <div class="field"><label>Country / País</label><input type="text" id="country" placeholder="e.g. Mexico / Colombia / LATAM"></div>
+      <div class="field"><label>Prepared by</label><input type="text" id="prepared_by" value="Eugenio Chacon"></div>
+    </div>
+  </div>
+</div>
+
+<!-- 01 SNAPSHOT -->
+<div id="s01" class="section">
+  <div class="section-header"><div><div class="section-title">01 · Snapshot</div><div class="section-desc">Slide 2 — Top numbers and key movements</div></div></div>
+  <div class="kpi-grid">
+    <div class="kpi-card"><div class="kpi-label">Active Accounts</div><input class="kpi-input" type="text" id="active_accounts" placeholder="#"><div class="kpi-sub">total</div></div>
+    <div class="kpi-card"><div class="kpi-label">Total Backlog (USD)</div><input class="kpi-input" type="text" id="total_backlog" placeholder="$0,000"><div class="kpi-sub">open orders</div></div>
+    <div class="kpi-card"><div class="kpi-label">Units Invoiced MTD</div><input class="kpi-input" type="text" id="units_invoiced" placeholder="#"><div class="kpi-sub">this month</div></div>
+    <div class="kpi-card"><div class="kpi-label">Revenue Invoiced MTD</div><input class="kpi-input" type="text" id="revenue_invoiced" placeholder="$0,000"><div class="kpi-sub">this month</div></div>
+  </div>
+  <div class="card">
+    <div class="card-title">Key Movements (one per line)</div>
+    <textarea id="key_movements" rows="4" placeholder="Liverpool — confirmed 10-store program, 3 slots each&#10;Vargu — first order placed H1 June&#10;Kennedy — LOI signed for LATAM/Caribbean distribution"></textarea>
+  </div>
+  <div class="card">
+    <div class="card-title">Flags & Alerts</div>
+    <div class="two-col">
+      <div class="field"><label>Needs from LZB team</label><textarea id="lzb_needs" rows="3" placeholder="Pricing approval / Price list / Marketing asset / Other"></textarea></div>
+      <div class="field"><label>Blockers this month</label><textarea id="blockers" rows="3" placeholder="Customs / Credit approval / Stock / Logistics / Other"></textarea></div>
+    </div>
+  </div>
+</div>
+
+<!-- 02 ACCOUNTS -->
+<div id="s02" class="section">
+  <div class="section-header"><div><div class="section-title">02 · Account Performance</div><div class="section-desc">Slide 3 — One row per active account</div></div></div>
+  <div class="card">
+    <div class="card-title">Account Table</div>
+    <div class="table-wrapper">
+      <table>
+        <thead><tr><th>Account</th><th>Doors</th><th>Slots</th><th>Units Sold</th><th>Revenue USD</th><th>Floor Inv.</th><th>Backlog</th><th>Rotation</th><th>vs Target</th><th>Status</th><th></th></tr></thead>
+        <tbody id="account-tbody"></tbody>
+      </table>
+    </div>
+    <button class="add-row-btn" onclick="addRow('account-tbody', accountCols)">+ Add Account</button>
+  </div>
+  <div class="card">
+    <div class="card-title">Performance Notes (one per account)</div>
+    <textarea id="perf_notes" rows="5" placeholder="Liverpool: strong start driven by promo in week 1&#10;Atlas: delivery delay impacted floor presence first 2 weeks&#10;Costco: Monterrey event exceeded $10K target"></textarea>
+  </div>
+</div>
+
+<!-- 03 INVENTORY -->
+<div id="s03" class="section">
+  <div class="section-header"><div><div class="section-title">03 · Inventory Status</div><div class="section-desc">Slide 4 — Floor, transit, coverage</div></div></div>
+  <div class="kpi-grid">
+    <div class="kpi-card"><div class="kpi-label">Units on Floor</div><input class="kpi-input" type="text" id="units_on_floor" placeholder="#"><div class="kpi-sub">across all accounts</div></div>
+    <div class="kpi-card"><div class="kpi-label">Units in Transit</div><input class="kpi-input" type="text" id="units_in_transit" placeholder="#"><div class="kpi-sub">ordered, not delivered</div></div>
+    <div class="kpi-card"><div class="kpi-label">Backlog Value</div><input class="kpi-input" type="text" id="backlog_value" placeholder="$0,000"><div class="kpi-sub">open purchase orders</div></div>
+    <div class="kpi-card"><div class="kpi-label">Avg Weeks of Cover</div><input class="kpi-input" type="text" id="weeks_cover" placeholder="#"><div class="kpi-sub">at current sell rate</div></div>
+  </div>
+  <div class="card">
+    <div class="card-title">Inventory by SKU / Account</div>
+    <div class="table-wrapper">
+      <table>
+        <thead><tr><th>Account</th><th>SKU / Model</th><th>On Floor</th><th>Sold MTD</th><th>In Transit</th><th>Reorder?</th><th>Next Action</th><th>Target Stock</th><th>Days Cover</th><th></th></tr></thead>
+        <tbody id="inv-tbody"></tbody>
+      </table>
+    </div>
+    <button class="add-row-btn" onclick="addRow('inv-tbody', invCols)">+ Add SKU</button>
+  </div>
+  <div class="card">
+    <div class="card-title">Inventory Issues / Concerns</div>
+    <textarea id="inv_issues" rows="4" placeholder="SKU X sitting 60+ days at Account Y with no movement — recommend swap or promo&#10;Order placed 3 weeks ago still not confirmed — needs follow-up with logistics"></textarea>
+  </div>
+</div>
+
+<!-- 04 COMMERCIAL -->
+<div id="s04" class="section">
+  <div class="section-header"><div><div class="section-title">04 · Commercial Narrative</div><div class="section-desc">Slide 5 — What worked, challenges, feedback, market</div></div></div>
+  <div class="two-col">
+    <div class="card"><div class="card-title">What worked this month</div><textarea id="what_worked" rows="7" placeholder="Promo event at Account X drove 8 units in one weekend&#10;Good response to new display at Account Y&#10;Training improved close rate at store Z"></textarea></div>
+    <div class="card"><div class="card-title">What didn't work / Challenges</div><textarea id="what_didnt" rows="7" placeholder="Low foot traffic at Account A throughout the month&#10;Competitor promotion affected conversion at Account B&#10;Delivery delay caused loss of 2 sales at Account C"></textarea></div>
+    <div class="card"><div class="card-title">Customer / Consumer Feedback</div><textarea id="cust_feedback" rows="7" placeholder="End consumers asking for fabric options not in current lineup&#10;Sales staff at Account X requests product demo support&#10;Price objection most common at mid-tier accounts"></textarea></div>
+    <div class="card"><div class="card-title">Brand & Market Observations</div><textarea id="market_obs" rows="7" placeholder="Competitor X launched new SKU at lower price point&#10;Positive media coverage on home comfort trend in market&#10;New mall opening in Q3 — anchor furniture slot available"></textarea></div>
+  </div>
+</div>
+
+<!-- 05 PIPELINE -->
+<div id="s05" class="section">
+  <div class="section-header"><div><div class="section-title">05 · Pipeline & Next 45 Days</div><div class="section-desc">Slide 6 — Active opportunities and commitments</div></div></div>
+  <div class="card">
+    <div class="card-title">Active Pipeline</div>
+    <div class="table-wrapper">
+      <table>
+        <thead><tr><th>Account</th><th>Opportunity</th><th>Est. Units</th><th>Est. USD</th><th>Probability</th><th>Expected Close</th><th>Next Action</th><th>Owner</th><th></th></tr></thead>
+        <tbody id="pipeline-tbody"></tbody>
+      </table>
+    </div>
+    <button class="add-row-btn" onclick="addRow('pipeline-tbody', pipelineCols)">+ Add Opportunity</button>
+  </div>
+  <div class="card">
+    <div class="card-title">Commitments This Month</div>
+    <div class="two-col">
+      <div class="field"><label>Orders to place / confirm (one per line)</label><textarea id="orders_to_place" rows="5" placeholder="Liverpool — 30 units — by June 15&#10;Atlas restock — 18 units — by June 20&#10;Costco 6 stores — end of month"></textarea></div>
+      <div class="field"><label>Activities & visits planned (one per line)</label><textarea id="activities_planned" rows="5" placeholder="Liverpool store visit — June 10&#10;Costco Monterrey event — June 25&#10;Vargu meeting Bogota — June 18"></textarea></div>
+    </div>
+  </div>
+</div>
+
+<!-- 06 NEW CUSTOMERS -->
+<div id="s06" class="section">
+  <div class="section-header"><div><div class="section-title">06 · New Customer Deployment</div><div class="section-desc">Slide 7 — Accounts in onboarding or implementation</div></div></div>
+  <div class="card">
+    <div class="card-title">New Accounts in Implementation</div>
+    <div class="table-wrapper">
+      <table>
+        <thead><tr><th>Market</th><th>Dealer</th><th>Customer</th><th>Doors</th><th>Total Slots</th><th>Launch Date</th><th>Status</th><th>Next Step</th><th></th></tr></thead>
+        <tbody id="newcust-tbody"></tbody>
+      </table>
+    </div>
+    <button class="add-row-btn" onclick="addRow('newcust-tbody', newcustCols)">+ Add Account</button>
+  </div>
+  <div class="card">
+    <div class="card-title">Onboarding Notes (one per account)</div>
+    <textarea id="onboarding_notes" rows="5" placeholder="Tugo: display live, 0.5x sell-through in first 2 weeks&#10;Vargu: first order expected H1 June, SKU selection in progress&#10;Kennedy: LOI signed, ~300-unit first order in 45 days"></textarea>
+  </div>
+</div>
+
+<!-- 07 NEEDS -->
+<div id="s07" class="section">
+  <div class="section-header"><div><div class="section-title">07 · Needs & Escalations</div><div class="section-desc">Slide 8 — What you need from LZB HQ</div></div></div>
+  <div class="three-col">
+    <div class="card"><div class="card-title">Marketing & Materials</div><textarea id="need_marketing" rows="5" placeholder="POS material for Atlas stores — POS kit x6 by June 15&#10;Social content for Colombia market — 4 posts for June&#10;Approval for local promotion at Account X"></textarea></div>
+    <div class="card"><div class="card-title">Pricing & Commercial</div><textarea id="need_pricing" rows="5" placeholder="Special pricing request for Liverpool large order&#10;Quote for Costco 6-store program&#10;Nicelink SKU pricing approval — pending Trevor"></textarea></div>
+    <div class="card"><div class="card-title">Product & Inventory</div><textarea id="need_product" rows="5" placeholder="New SKUs to present for Atlas program&#10;Stock availability on Model X — urgent&#10;Sample request for Colombia showroom"></textarea></div>
+    <div class="card"><div class="card-title">Training & Support</div><textarea id="need_training" rows="5" placeholder="Sales training needed at Liverpool stores — June&#10;Product knowledge gap at Atlas team&#10;Tech support for display install"></textarea></div>
+    <div class="card"><div class="card-title">Logistics & Operations</div><textarea id="need_logistics" rows="5" placeholder="Order #XXXX placed 3 weeks ago — needs confirmation&#10;Customs issue on Colombia shipment&#10;Delivery delay impacting floor availability"></textarea></div>
+    <div class="card"><div class="card-title">Strategic / Other</div><textarea id="need_strategic" rows="5" placeholder="Contract / Legal item pending — PH Studio Anexo A.1&#10;Competitor intelligence update needed&#10;Brazil partner model decision needed — Jeff alignment"></textarea></div>
+  </div>
+</div>
+
+<!-- 08 MARKETING -->
+<div id="s08" class="section">
+  <div class="section-header"><div><div class="section-title">08 · Marketing Update</div><div class="section-desc">Slide 9 — Events, digital, in-store</div></div></div>
+  <div class="three-col">
+    <div class="card"><div class="card-title">Events & Activations</div><textarea id="mkt_events" rows="6" placeholder="Costco special event — Store X — $8K in 15 days&#10;Feria del Hogar Bogota — September 3&#10;Atlas roadshow — central Mexico"></textarea></div>
+    <div class="card"><div class="card-title">Digital / Social Media</div><textarea id="mkt_digital" rows="6" placeholder="Posts published / reach / engagement&#10;Paid campaign result if applicable&#10;Influencer activation if applicable&#10;E-commerce traffic notes"></textarea></div>
+    <div class="card"><div class="card-title">In-Store Execution</div><textarea id="mkt_instore" rows="6" placeholder="Display updates / planogram changes&#10;POS material installed at which accounts&#10;Training delivered — account / staff count&#10;Visual merchandising changes"></textarea></div>
+  </div>
+  <div class="card">
+    <div class="card-title">Key Marketing Asks from LZB</div>
+    <textarea id="mkt_asks" rows="4" placeholder="Social posts for Colombia market — 4 posts for June&#10;Brand material for new Atlas stores — POS kit x6&#10;Approval for local promotion at Account X"></textarea>
+  </div>
+</div>
+
+<!-- 10 CLOSING -->
+<div id="s10" class="section">
+  <div class="section-header"><div><div class="section-title">Closing</div><div class="section-desc">Slide 10 — Next review and contact info</div></div></div>
+  <div class="card">
+    <div class="card-title">Next Review</div>
+    <div class="two-col">
+      <div class="field"><label>Date</label><input type="text" id="next_review" placeholder="June 15, 2025"></div>
+      <div class="field"><label>Format</label><input type="text" id="next_format" placeholder="video call / in-person"></div>
+    </div>
+    <div class="field"><label>Dealer Contact Email</label><input type="text" id="dealer_email" placeholder="contact@dealer.com"></div>
+    <div class="field"><label>Jeff Email</label><input type="text" id="jeff_email" value="jeff.lillich@la-z-boy.com"></div>
+    <div class="field"><label>LATAM Team Email</label><input type="text" id="latam_email" value="eugenio.chacon@gmail.com"></div>
+  </div>
+</div>
+
+<!-- GENERATE -->
+<div id="generate" class="section">
+  <div class="generate-panel">
+    <h2>Ready to generate your PPTX?</h2>
+    <p>Review all sections before generating. The file will download directly to your computer with the official La-Z-Boy template, all fields filled in.</p>
+    <button class="generate-big-btn" id="gen-btn" onclick="generatePPTX()">
+      <span class="spinner" id="spinner"></span>
+      <span id="gen-label">Download PPTX</span>
+    </button>
+    <div class="status-msg" id="status-msg"></div>
+  </div>
+</div>
+
+</main>
+
+<script>
+// ── NAV ─────────────────────────────────────────────────────────────────────
+function showSection(id) {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  const order = ['s00','s01','s02','s03','s04','s05','s06','s07','s08','s10','generate'];
+  const idx = order.indexOf(id);
+  if (idx >= 0) document.querySelectorAll('.nav-tab')[idx].classList.add('active');
+}
+
+// ── TABLE HELPERS ─────────────────────────────────────────────────────────
+const accountCols = [
+  {key:'account', ph:'Account name', w:'140px'},
+  {key:'doors', ph:'#', w:'50px'},
+  {key:'slots', ph:'#', w:'50px'},
+  {key:'units_sold', ph:'#', w:'65px'},
+  {key:'revenue', ph:'$', w:'80px'},
+  {key:'floor_inv', ph:'#', w:'65px'},
+  {key:'backlog', ph:'$', w:'80px'},
+  {key:'rotation', ph:'0.0x', w:'60px'},
+  {key:'vs_target', ph:'▲/▼%', w:'70px'},
+  {key:'status', ph:'On Track', w:'110px', type:'status'},
+];
+const invCols = [
+  {key:'account', ph:'Account', w:'110px'},
+  {key:'sku', ph:'SKU / Model', w:'140px'},
+  {key:'on_floor', ph:'#', w:'60px'},
+  {key:'sold_mtd', ph:'#', w:'60px'},
+  {key:'in_transit', ph:'#', w:'70px'},
+  {key:'reorder', ph:'No', w:'70px', type:'reorder'},
+  {key:'next_action', ph:'Next action', w:'130px'},
+  {key:'target_stock', ph:'#', w:'80px'},
+  {key:'days_cover', ph:'#', w:'80px'},
+];
+const pipelineCols = [
+  {key:'account', ph:'Account', w:'110px'},
+  {key:'opportunity', ph:'Opportunity description', w:'180px'},
+  {key:'est_units', ph:'#', w:'65px'},
+  {key:'est_usd', ph:'$', w:'80px'},
+  {key:'probability', ph:'High', w:'70px', type:'probability'},
+  {key:'expected_close', ph:'Month YYYY', w:'100px'},
+  {key:'next_action', ph:'Next action', w:'140px'},
+  {key:'owner', ph:'Owner', w:'90px'},
+];
+const newcustCols = [
+  {key:'market', ph:'Country', w:'90px'},
+  {key:'dealer', ph:'Dealer', w:'100px'},
+  {key:'customer', ph:'Customer', w:'130px'},
+  {key:'doors', ph:'#', w:'55px'},
+  {key:'total_slots', ph:'~#', w:'65px'},
+  {key:'launch_date', ph:'Month YYYY', w:'100px'},
+  {key:'status', ph:'In Progress', w:'110px', type:'deploy_status'},
+  {key:'next_step', ph:'Next step / action', w:'160px'},
+];
+
+function addRow(tbodyId, cols) {
+  const tr = document.createElement('tr');
+  const id = Date.now();
+  let cells = '';
+  cols.forEach(col => {
+    if (col.type === 'status') {
+      cells += `<td><select style="width:${col.w};font-size:12px;" data-key="${col.key}"><option>On Track</option><option>At Risk</option><option>Needs Attention</option></select></td>`;
+    } else if (col.type === 'reorder') {
+      cells += `<td><select style="width:${col.w};font-size:12px;" data-key="${col.key}"><option>No</option><option>Yes</option><option>Soon</option></select></td>`;
+    } else if (col.type === 'probability') {
+      cells += `<td><select style="width:${col.w};font-size:12px;" data-key="${col.key}"><option>High</option><option>Med</option><option>Low</option></select></td>`;
+    } else if (col.type === 'deploy_status') {
+      cells += `<td><select style="width:${col.w};font-size:12px;" data-key="${col.key}"><option>On Track</option><option>In Progress</option><option>Delayed</option></select></td>`;
+    } else {
+      cells += `<td><input type="text" placeholder="${col.ph}" style="width:${col.w}" data-key="${col.key}"></td>`;
+    }
+  });
+  cells += `<td><button class="del-btn" onclick="this.closest('tr').remove(); autoSave()">×</button></td>`;
+  tr.innerHTML = cells;
+  document.getElementById(tbodyId).appendChild(tr);
+  tr.querySelectorAll('input, select').forEach(el => el.addEventListener('change', autoSave));
+}
+
+function getTableData(tbodyId) {
+  const rows = [];
+  document.getElementById(tbodyId).querySelectorAll('tr').forEach(tr => {
+    const obj = {};
+    tr.querySelectorAll('[data-key]').forEach(el => {
+      obj[el.dataset.key] = el.value.trim();
+    });
+    if (Object.values(obj).some(v => v)) rows.push(obj);
+  });
+  return rows;
+}
+
+// ── AUTO-SAVE (localStorage) ──────────────────────────────────────────────
+function autoSave() {
+  try {
+    const data = collectData();
+    localStorage.setItem('lzb_mbr_data', JSON.stringify(data));
+    const badge = document.getElementById('saved-badge');
+    badge.classList.add('visible');
+    setTimeout(() => badge.classList.remove('visible'), 1800);
+  } catch(e) {}
+}
+
+function loadSaved() {
+  try {
+    const raw = localStorage.getItem('lzb_mbr_data');
+    if (!raw) return;
+    const data = JSON.parse(raw);
+    // Restore simple fields
+    const fields = ['dealer','country','prepared_by','active_accounts','total_backlog','units_invoiced','revenue_invoiced',
+      'key_movements','lzb_needs','blockers','perf_notes','units_on_floor','units_in_transit','backlog_value','weeks_cover',
+      'inv_issues','what_worked','what_didnt','cust_feedback','market_obs','orders_to_place','activities_planned',
+      'onboarding_notes','need_marketing','need_pricing','need_product','need_training','need_logistics','need_strategic',
+      'mkt_events','mkt_digital','mkt_instore','mkt_asks','next_review','next_format','dealer_email','jeff_email','latam_email'];
+    fields.forEach(f => { const el = document.getElementById(f); if (el && data[f] !== undefined) el.value = data[f]; });
+    if (data.period) document.getElementById('period-select').value = data.period;
+    // Restore tables
+    if (data.accounts) data.accounts.forEach(() => addRow('account-tbody', accountCols));
+    if (data.inventory) data.inventory.forEach(() => addRow('inv-tbody', invCols));
+    if (data.pipeline) data.pipeline.forEach(() => addRow('pipeline-tbody', pipelineCols));
+    if (data.new_customers) data.new_customers.forEach(() => addRow('newcust-tbody', newcustCols));
+    // Fill table values
+    const fillTable = (tbodyId, rows) => {
+      if (!rows) return;
+      const trs = document.getElementById(tbodyId).querySelectorAll('tr');
+      rows.forEach((row, i) => {
+        if (!trs[i]) return;
+        Object.entries(row).forEach(([key, val]) => {
+          const el = trs[i].querySelector(`[data-key="${key}"]`);
+          if (el) el.value = val;
+        });
+      });
+    };
+    fillTable('account-tbody', data.accounts);
+    fillTable('inv-tbody', data.inventory);
+    fillTable('pipeline-tbody', data.pipeline);
+    fillTable('newcust-tbody', data.new_customers);
+  } catch(e) {}
+}
+
+function collectData() {
+  const g = id => { const el = document.getElementById(id); return el ? el.value.trim() : ''; };
+  return {
+    period: document.getElementById('period-select').value,
+    dealer: g('dealer'), country: g('country'), prepared_by: g('prepared_by'),
+    active_accounts: g('active_accounts'), total_backlog: g('total_backlog'),
+    units_invoiced: g('units_invoiced'), revenue_invoiced: g('revenue_invoiced'),
+    key_movements: g('key_movements'), lzb_needs: g('lzb_needs'), blockers: g('blockers'),
+    accounts: getTableData('account-tbody'),
+    perf_notes: g('perf_notes'),
+    units_on_floor: g('units_on_floor'), units_in_transit: g('units_in_transit'),
+    backlog_value: g('backlog_value'), weeks_cover: g('weeks_cover'),
+    inventory: getTableData('inv-tbody'), inv_issues: g('inv_issues'),
+    what_worked: g('what_worked'), what_didnt: g('what_didnt'),
+    cust_feedback: g('cust_feedback'), market_obs: g('market_obs'),
+    pipeline: getTableData('pipeline-tbody'),
+    orders_to_place: g('orders_to_place'), activities_planned: g('activities_planned'),
+    new_customers: getTableData('newcust-tbody'), onboarding_notes: g('onboarding_notes'),
+    need_marketing: g('need_marketing'), need_pricing: g('need_pricing'),
+    need_product: g('need_product'), need_training: g('need_training'),
+    need_logistics: g('need_logistics'), need_strategic: g('need_strategic'),
+    mkt_events: g('mkt_events'), mkt_digital: g('mkt_digital'),
+    mkt_instore: g('mkt_instore'), mkt_asks: g('mkt_asks'),
+    next_review: g('next_review'), next_format: g('next_format'),
+    dealer_email: g('dealer_email'), jeff_email: g('jeff_email'), latam_email: g('latam_email'),
+  };
+}
+
+// ── GENERATE ──────────────────────────────────────────────────────────────
+async function generatePPTX() {
+  const btn = document.getElementById('gen-btn');
+  const spinner = document.getElementById('spinner');
+  const label = document.getElementById('gen-label');
+  const msg = document.getElementById('status-msg');
+
+  btn.disabled = true;
+  spinner.style.display = 'block';
+  label.textContent = 'Generating...';
+  msg.textContent = 'Building your presentation...';
+
+  try {
+    const data = collectData();
+    const res = await fetch('/generate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data)
+    });
+    if (!res.ok) throw new Error('Server error: ' + res.status);
+    const blob = await res.blob();
+    const period_safe = data.period.replace(/\s+/g, '_');
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `LZB_LATAM_MBR_${period_safe}.pptx`;
+    a.click();
+    URL.revokeObjectURL(url);
+    msg.textContent = 'Done. Check your downloads folder.';
+    label.textContent = 'Download PPTX';
+  } catch(err) {
+    msg.textContent = 'Error: ' + err.message;
+    label.textContent = 'Download PPTX';
+  } finally {
+    btn.disabled = false;
+    spinner.style.display = 'none';
+  }
+}
+
+function clearAll() {
+  if (!confirm('Clear all data in this dashboard?')) return;
+  localStorage.removeItem('lzb_mbr_data');
+  location.reload();
+}
+
+
+async function saveToCloud() {
+  const btn = document.getElementById('save-btn');
+  btn.textContent = 'Saving...';
+  btn.disabled = true;
+  try {
+    const data = collectData();
+    const res = await fetch('/save', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data)
+    });
+    const json = await res.json();
+    if (json.ok) {
+      btn.textContent = '✓ Saved to cloud';
+      setTimeout(() => { btn.textContent = '💾 Save'; btn.disabled = false; }, 2500);
+    } else { throw new Error(json.error || 'Save failed'); }
+  } catch(e) {
+    alert('Error saving: ' + e.message);
+    btn.textContent = '💾 Save'; btn.disabled = false;
+  }
+}
+
+async function loadFromCloud() {
+  const btn = document.getElementById('load-btn');
+  btn.textContent = 'Loading...'; btn.disabled = true;
+  try {
+    const res = await fetch('/history');
+    const json = await res.json();
+    const periods = (json.periods || []).sort().reverse();
+    if (!periods.length) {
+      alert('No saved MBRs found yet. Fill and save one first.');
+      btn.textContent = '↑ Load MBR'; btn.disabled = false; return;
+    }
+    const period = prompt('Saved MBRs (newest first):\n' + periods.join('\n') + '\n\nType the period to load:');
+    if (!period) { btn.textContent = '↑ Load MBR'; btn.disabled = false; return; }
+    const res2 = await fetch('/load/' + encodeURIComponent(period.trim()));
+    const json2 = await res2.json();
+    if (!json2.ok) throw new Error('Period not found. Check the exact name.');
+    localStorage.setItem('lzb_mbr_data', JSON.stringify(json2.data));
+    location.reload();
+  } catch(e) {
+    alert('Error: ' + e.message);
+    btn.textContent = '↑ Load MBR'; btn.disabled = false;
+  }
+}
+
+// Auto-save on any input change
+document.addEventListener('input', autoSave);
+
+// Init
+loadSaved();
+// Add one empty row to each table if none loaded
+if (!document.getElementById('account-tbody').children.length) addRow('account-tbody', accountCols);
+if (!document.getElementById('inv-tbody').children.length) addRow('inv-tbody', invCols);
+if (!document.getElementById('pipeline-tbody').children.length) addRow('pipeline-tbody', pipelineCols);
+if (!document.getElementById('newcust-tbody').children.length) addRow('newcust-tbody', newcustCols);
+</script>
+</body>
+</html>
