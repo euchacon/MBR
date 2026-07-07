@@ -40,6 +40,16 @@ def save_store(store):
 
 # ── PPTX helpers ──────────────────────────────────────────────────────────────
 
+def _insert_run(p_elem, r_elem):
+    """Insert a run BEFORE endParaRPr so PowerPoint renders it correctly."""
+    from pptx.oxml.ns import qn
+    end = p_elem.find(qn('a:endParaRPr'))
+    if end is not None:
+        end.addprevious(r_elem)
+    else:
+        p_elem.append(r_elem)
+
+
 def set_text_frame(tf, lines):
     if not lines:
         lines = ['']
@@ -59,7 +69,7 @@ def set_text_frame(tf, lines):
     if t_elem is None:
         t_elem = etree.SubElement(r_elem, qn('a:t'))
     t_elem.text = lines[0]
-    first_p.append(r_elem)
+    _insert_run(first_p, r_elem)
     for line in lines[1:]:
         new_p = copy.deepcopy(first_p)
         for r in new_p.findall(qn('a:r')):
@@ -69,7 +79,7 @@ def set_text_frame(tf, lines):
         if new_t is None:
             new_t = etree.SubElement(new_r, qn('a:t'))
         new_t.text = line
-        new_p.append(new_r)
+        _insert_run(new_p, new_r)
         txBody.append(new_p)
 
 def replace_shape_text(slide, shape_name, new_text):
@@ -103,9 +113,10 @@ def fill_slide_table(slide, table_index, rows_data, col_keys):
             first_p = paras[0]
             for r in first_p.findall(qn('a:r')):
                 first_p.remove(r)
-            r_elem = etree.SubElement(first_p, qn('a:r'))
+            r_elem = etree.Element(qn('a:r'))
             t_elem = etree.SubElement(r_elem, qn('a:t'))
             t_elem.text = str(row_data.get(col_key, ''))
+            _insert_run(first_p, r_elem)
 
 # ── Routes ────────────────────────────────────────────────────────────────────
 
